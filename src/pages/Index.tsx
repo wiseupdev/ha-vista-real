@@ -1,61 +1,84 @@
-import { ArrowRight, Award, Shield, Clock, Star, Quote } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Award, Shield, Clock, Star, Quote, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "@/components/PropertyCard";
 import SearchBar from "@/components/SearchBar";
-import heroImage from "@/assets/hero-luxury-real-estate.jpg";
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
-import property4 from "@/assets/property-4.jpg";
+import supabase from "@/utility/supabaseClient";
+
+// Swiper
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+
+// Imagens
+import bgDark from "@/assets/hero-luxury-real-estate.jpg";
+import bgLight from "@/assets/hero-luxury-light.jpg";
 
 const Index = () => {
-  const featuredProperties = [
-    {
-      id: "1",
-      image: property1,
-      title: "Apartamento Moderno no Brooklin",
-      price: "R$ 1.850.000",
-      location: "Brooklin, São Paulo - SP",
-      bedrooms: 3,
-      bathrooms: 2,
-      area: 120,
-      type: "Apartamento",
-    },
-    {
-      id: "2",
-      image: property2,
-      title: "Cobertura Duplex Vila Olímpia",
-      price: "R$ 3.500.000",
-      location: "Vila Olímpia, São Paulo - SP",
-      bedrooms: 4,
-      bathrooms: 4,
-      area: 250,
-      type: "Cobertura",
-    },
-    {
-      id: "3",
-      image: property3,
-      title: "Casa em Condomínio Fechado",
-      price: "R$ 2.200.000",
-      location: "Alphaville, Barueri - SP",
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 350,
-      type: "Casa",
-    },
-    {
-      id: "4",
-      image: property4,
-      title: "Villa à Beira-Mar",
-      price: "R$ 8.900.000",
-      location: "Riviera de São Lourenço, Bertioga - SP",
-      bedrooms: 5,
-      bathrooms: 5,
-      area: 600,
-      type: "Casa",
-    },
-  ];
+  // Detectar tema atual
+  const [theme, setTheme] = useState(
+    document.documentElement.classList.contains("light") ? "light" : "dark"
+  );
+
+  const [imoveis, setImoveis] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const currentTheme = document.documentElement.classList.contains("light")
+        ? "light"
+        : "dark";
+      setTheme(currentTheme);
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  // 🔹 Buscar imóveis mais favoritados
+  useEffect(() => {
+    const buscarImoveis = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("HA_IMOVEIS")
+        .select(`
+          id,
+          titulo,
+          cidade,
+          bairro,
+          valor,
+          tipo,
+          quartos,
+          banheiros,
+          metros,
+          status,
+          HA_favorito (user_id)
+        `)
+        .eq("status", true)
+        .limit(10);
+
+      if (error) {
+        console.error("Erro ao buscar imóveis:", error);
+        setLoading(false);
+        return;
+      }
+
+      const lista = data.map((i) => ({
+        ...i,
+        likes: i.HA_favorito ? i.HA_favorito.length : 0,
+      }));
+
+      setImoveis(lista);
+      setLoading(false);
+    };
+
+    buscarImoveis();
+  }, []);
 
   const benefits = [
     {
@@ -99,19 +122,21 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[90vh] flex items-center justify-center overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-background" />
-        </div>
+      <section
+        className="relative h-[90vh] flex items-center justify-center overflow-hidden transition-all"
+        style={{
+          backgroundImage: `url(${theme === "light" ? bgLight : bgDark})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-background" />
 
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold text-foreground mb-6 animate-fade-in">
+          <h1 className="text-white text-6xl font-extrabold text-center drop-shadow-lg">
             Encontre Seu <span className="text-primary">Imóvel</span> dos Sonhos
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto animate-fade-in">
+          <p className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto animate-fade-in">
             Mais de 15 anos conectando pessoas aos melhores imóveis de alto padrão
           </p>
 
@@ -125,8 +150,8 @@ const Index = () => {
             size="lg"
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl px-8 py-6 text-lg shadow-[var(--shadow-primary)] transition-all hover:scale-105 animate-fade-in"
           >
-            <Link to="/imoveis">
-              Explorar Imóveis
+            <Link to="/credito">
+              Simule seu Crédito
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
@@ -143,11 +168,38 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {featuredProperties.map((property) => (
-              <PropertyCard key={property.id} {...property} />
-            ))}
-          </div>
+          {loading ? (
+            <p className="text-center text-muted-foreground">Carregando imóveis...</p>
+          ) : (
+            <Swiper
+              modules={[Navigation, Pagination, Autoplay]}
+              spaceBetween={20}
+              slidesPerView={1}
+              breakpoints={{
+                640: { slidesPerView: 1 },
+                768: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+                1280: { slidesPerView: 4 },
+              }}
+              navigation
+              pagination={{ clickable: true }}
+              autoplay={{ delay: 4000 }}
+              className="mb-12"
+            >
+              {imoveis.map((imovel) => (
+                <SwiperSlide key={imovel.id}>
+                  <div className="relative">
+                    <PropertyCard {...imovel} />
+                    {/* Ícone discreto de favoritos */}
+                    <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                      <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                      <span>{imovel.likes}</span>
+                    </div>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
 
           <div className="text-center">
             <Button
@@ -165,19 +217,20 @@ const Index = () => {
         </div>
       </section>
 
-      {/* About Section */}
+      {/* About */}
       <section className="py-20 bg-card">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-fade-in">
               <h2 className="text-4xl font-bold text-foreground mb-6">Sobre a H.A Imobiliária</h2>
               <p className="text-lg text-muted-foreground mb-6">
-                Com mais de 15 anos de experiência no mercado imobiliário, a H.A Imobiliária se consolidou 
-                como referência em imóveis de alto padrão na região.
+                Com mais de 15 anos de experiência no mercado imobiliário, a H.A Imobiliária se
+                consolidou como referência em imóveis de alto padrão na região.
               </p>
               <p className="text-lg text-muted-foreground mb-8">
-                Nossa missão é transformar sonhos em realidade, oferecendo um atendimento personalizado e 
-                soluções completas para compra, venda e locação de imóveis exclusivos.
+                Nossa missão é transformar sonhos em realidade, oferecendo um atendimento
+                personalizado e soluções completas para compra, venda e locação de imóveis
+                exclusivos.
               </p>
               <Button
                 asChild
@@ -239,7 +292,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="py-20 bg-gradient-to-r from-primary/10 to-primary/5">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold text-foreground mb-6 animate-fade-in">

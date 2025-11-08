@@ -1,72 +1,34 @@
 import { Building2, Mail, Phone, MapPin, Facebook, Instagram, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-card border-t border-border">
+    <footer className="bg-card border-t border-border relative z-10">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Logo e Descrição */}
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-primary rounded-lg">
-                <Building2 className="h-6 w-6 text-primary-foreground" />
-              </div>
+              <img
+                src={logo}
+                alt="logo"
+                className="h-10 w-auto object-contain transition-transform duration-300 hover:scale-105"
+              />
               <span className="text-xl font-bold text-foreground">H.A Imobiliária</span>
             </Link>
-            <p className="text-muted-foreground text-sm mb-4 max-w-md">
-              Especializada em imóveis de alto padrão, oferecemos soluções completas para compra, venda e locação. 
-              Seu sonho, nossa missão.
+            <p className="text-muted-foreground text-sm mb-4 max-w-md leading-relaxed">
+              Especializada em imóveis de alto padrão, oferecemos soluções completas para compra,
+              venda e locação. Seu sonho, nossa missão.
             </p>
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>
                 <strong>CRECI:</strong> 12345-J
               </p>
-              <p className="text-xs text-muted-foreground">
-                Registro profissional válido e regularizado
-              </p>
+              <p>Registro profissional válido e regularizado</p>
             </div>
-          </div>
-
-          {/* Links Rápidos */}
-          <div>
-            <h3 className="text-foreground font-bold mb-4">Links Rápidos</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  to="/"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/imoveis"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Imóveis
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/sobre"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Sobre Nós
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/contato"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Contato
-                </Link>
-              </li>
-            </ul>
           </div>
 
           {/* Contato */}
@@ -87,7 +49,7 @@ const Footer = () => {
                   href="tel:+5511999999999"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  (11) 99999-9999
+                  (85) 98112-7529
                 </a>
               </li>
               <li className="flex items-center gap-2">
@@ -104,11 +66,12 @@ const Footer = () => {
         </div>
 
         {/* Redes Sociais e Copyright */}
-        <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="border-t border-border pt-6 mt-6 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-sm text-muted-foreground text-center md:text-left">
             © {currentYear} H.A Imobiliária. Todos os direitos reservados.
           </p>
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-4 mt-2 md:mt-0">
             <a
               href="https://facebook.com"
               target="_blank"
@@ -136,6 +99,9 @@ const Footer = () => {
           </div>
         </div>
       </div>
+
+      {/* Espaço extra para não colidir com o botão do WhatsApp */}
+      <div className="h-20 md:h-10" />
     </footer>
   );
 };

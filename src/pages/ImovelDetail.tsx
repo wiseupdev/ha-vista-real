@@ -1,95 +1,109 @@
 import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { MapPin, Bed, Bath, Square, Car, ArrowLeft, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "@/components/PropertyCard";
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
+import supabase from "@/utility/supabaseClient";
+
+interface Imovel {
+  id: number;
+  titulo: string;
+  descricao?: string;
+  cidade?: string;
+  bairro?: string;
+  rua?: string;
+  cep?: number;
+  data?: string;
+  status?: boolean;
+  valor?: number;
+  negociacao?: string;
+  tipo?: string;
+  numero?: string;
+  nome_anunciante?: string;
+  caracteristicas?: string;
+  Condominio?: string;
+  quartos?: number;
+  banheiros?: number;
+  metros?: number;
+  vagas?: number;
+}
 
 const ImovelDetail = () => {
   const { id } = useParams();
+  const [imovel, setImovel] = useState<Imovel | null>(null);
+  const [relacionados, setRelacionados] = useState<Imovel[]>([]);
 
-  // Mock data - em produção viria de um banco de dados
-  const property = {
-    id: id || "1",
-    title: "Apartamento Moderno no Brooklin",
-    price: "R$ 1.850.000",
-    location: "Rua Exemplo, 123 - Brooklin, São Paulo - SP",
-    type: "Apartamento",
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 120,
-    parking: 2,
-    description:
-      "Apartamento alto padrão com acabamento impecável, localizado em uma das regiões mais valorizadas de São Paulo. Conta com ampla varanda gourmet, sala integrada com cozinha planejada, suíte master com closet e banheira de hidromassagem. Condomínio oferece área de lazer completa com piscina, academia, salão de festas e playground.",
-    features: [
-      "Varanda Gourmet",
-      "Cozinha Planejada",
-      "Closet na Suíte",
-      "Ar Condicionado",
-      "Piso Porcelanato",
-      "Armários Embutidos",
-      "Energia Solar",
-      "Sistema de Segurança",
-    ],
-    amenities: [
-      "Piscina",
-      "Academia",
-      "Salão de Festas",
-      "Playground",
-      "Quadra Poliesportiva",
-      "Sauna",
-      "Espaço Gourmet",
-      "Segurança 24h",
-    ],
-    images: [property1, property2, property3],
-  };
+  useEffect(() => {
+    const fetchImovel = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("HA_IMOVEIS")
+          .select("*")
+          .eq("id", id)
+          .single();
 
-  const relatedProperties = [
-    {
-      id: "2",
-      image: property2,
-      title: "Cobertura Duplex Vila Olímpia",
-      price: "R$ 3.500.000",
-      location: "Vila Olímpia, São Paulo - SP",
-      bedrooms: 4,
-      bathrooms: 4,
-      area: 250,
-      type: "Cobertura",
-    },
-    {
-      id: "3",
-      image: property3,
-      title: "Casa em Condomínio Fechado",
-      price: "R$ 2.200.000",
-      location: "Alphaville, Barueri - SP",
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 350,
-      type: "Casa",
-    },
-  ];
+        if (error) throw error;
+        setImovel(data);
+
+        const { data: rel } = await supabase
+          .from("HA_IMOVEIS")
+          .select("*")
+          .eq("tipo", data.tipo)
+          .neq("id", id)
+          .limit(3);
+        setRelacionados(rel || []);
+      } catch (err) {
+        console.error("Erro ao buscar imóvel:", err);
+      }
+    };
+
+    if (id) fetchImovel();
+  }, [id]);
 
   const handleWhatsApp = () => {
+    if (!imovel) return;
     const message = encodeURIComponent(
-      `Olá! Tenho interesse no imóvel: ${property.title} - ${property.price}`
+      `Olá! Tenho interesse no imóvel: ${imovel.titulo} - ${imovel.valor?.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      })}`
     );
     window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
   };
 
   const handleShare = () => {
+    if (!imovel) return;
     if (navigator.share) {
       navigator.share({
-        title: property.title,
-        text: `Confira este imóvel: ${property.title}`,
+        title: imovel.titulo,
+        text: `Confira este imóvel: ${imovel.titulo}`,
         url: window.location.href,
       });
     }
   };
 
+  if (!imovel) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Carregando informações do imóvel...
+      </div>
+    );
+  }
+
+  const formattedPrice = imovel.valor
+    ? imovel.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    : "Sob consulta";
+
+  const endereco = `${imovel.rua || ""}, ${imovel.numero || ""} - ${imovel.bairro || ""}, ${
+    imovel.cidade || ""
+  }`;
+  const mapUrl = imovel.cep
+    ? `https://www.google.com/maps?q=${imovel.cep}&output=embed`
+    : "";
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Back Button */}
+      {/* Botão Voltar */}
       <div className="container mx-auto px-4 py-6">
         <Button asChild variant="ghost" className="mb-4 hover:text-primary">
           <Link to="/imoveis">
@@ -99,40 +113,33 @@ const ImovelDetail = () => {
         </Button>
       </div>
 
-      {/* Image Gallery */}
+      {/* Galeria de Imagens */}
       <section className="container mx-auto px-4 mb-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl overflow-hidden">
-          <div className="md:row-span-2">
-            <img
-              src={property.images[0]}
-              alt={property.title}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-            />
+          <div className="md:row-span-2 bg-muted aspect-video flex items-center justify-center text-muted-foreground">
+            <span>Sem imagem disponível</span>
           </div>
-          {property.images.slice(1).map((image, index) => (
-            <div key={index} className="aspect-video overflow-hidden">
-              <img
-                src={image}
-                alt={`${property.title} - ${index + 2}`}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          ))}
+          <div className="bg-muted aspect-video flex items-center justify-center text-muted-foreground">
+            <span>—</span>
+          </div>
+          <div className="bg-muted aspect-video flex items-center justify-center text-muted-foreground">
+            <span>—</span>
+          </div>
         </div>
       </section>
 
-      {/* Property Info */}
+      {/* Informações do Imóvel */}
       <section className="container mx-auto px-4 mb-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Info */}
+          {/* Coluna principal */}
           <div className="lg:col-span-2 space-y-8">
             <div>
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-4xl font-bold text-foreground mb-2">{property.title}</h1>
+                  <h1 className="text-4xl font-bold text-foreground mb-2">{imovel.titulo}</h1>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-5 w-5 text-primary" />
-                    <span>{property.location}</span>
+                    <span>{endereco}</span>
                   </div>
                 </div>
                 <Button
@@ -146,79 +153,99 @@ const ImovelDetail = () => {
               </div>
 
               <div className="flex items-center gap-6 text-muted-foreground mb-6">
-                <div className="flex items-center gap-2">
-                  <Bed className="h-5 w-5 text-primary" />
-                  <span className="font-semibold">{property.bedrooms} quartos</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Bath className="h-5 w-5 text-primary" />
-                  <span className="font-semibold">{property.bathrooms} banheiros</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Square className="h-5 w-5 text-primary" />
-                  <span className="font-semibold">{property.area}m²</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Car className="h-5 w-5 text-primary" />
-                  <span className="font-semibold">{property.parking} vagas</span>
-                </div>
+                {imovel.quartos ? (
+                  <div className="flex items-center gap-2">
+                    <Bed className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">{imovel.quartos} quartos</span>
+                  </div>
+                ) : null}
+                {imovel.banheiros ? (
+                  <div className="flex items-center gap-2">
+                    <Bath className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">{imovel.banheiros} banheiros</span>
+                  </div>
+                ) : null}
+                {imovel.metros ? (
+                  <div className="flex items-center gap-2">
+                    <Square className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">{imovel.metros}m²</span>
+                  </div>
+                ) : null}
+                {imovel.vagas ? (
+                  <div className="flex items-center gap-2">
+                    <Car className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">{imovel.vagas} vagas</span>
+                  </div>
+                ) : null}
               </div>
 
               <div className="bg-card rounded-2xl p-6 border border-border">
                 <h2 className="text-2xl font-bold text-foreground mb-4">Sobre o Imóvel</h2>
-                <p className="text-muted-foreground leading-relaxed">{property.description}</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  {imovel.descricao || "Descrição não disponível."}
+                </p>
               </div>
             </div>
 
-            {/* Features */}
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Características</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {property.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="h-2 w-2 bg-primary rounded-full" />
-                    <span className="text-muted-foreground">{feature}</span>
-                  </div>
-                ))}
+            {/* Características */}
+            {imovel.caracteristicas && typeof imovel.caracteristicas === "string" && (
+              <div className="bg-card rounded-2xl p-6 border border-border">
+                <h2 className="text-2xl font-bold text-foreground mb-4">Características</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {imovel.caracteristicas
+                    .split(",")
+                    .map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-primary rounded-full" />
+                        <span className="text-muted-foreground">{item.trim()}</span>
+                      </div>
+                    ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Amenities */}
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Comodidades do Condomínio</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {property.amenities.map((amenity, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="h-2 w-2 bg-primary rounded-full" />
-                    <span className="text-muted-foreground">{amenity}</span>
-                  </div>
-                ))}
+            {/* Condomínio */}
+            {imovel.Condominio && typeof imovel.Condominio === "string" && (
+              <div className="bg-card rounded-2xl p-6 border border-border">
+                <h2 className="text-2xl font-bold text-foreground mb-4">Comodidades do Condomínio</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {imovel.Condominio
+                    .split(",")
+                    .map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-primary rounded-full" />
+                        <span className="text-muted-foreground">{item.trim()}</span>
+                      </div>
+                    ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Map */}
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Localização</h2>
-              <div className="aspect-video bg-muted rounded-xl overflow-hidden">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3656.143837616681!2d-46.70260368537467!3d-23.60588608467!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce5742c5bda7e5%3A0x1e5d731c0f3c6c0!2sBrooklin%2C%20S%C3%A3o%20Paulo%20-%20SP!5e0!3m2!1sen!2sbr!4v1234567890"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+            {/* Mapa */}
+            {mapUrl && (
+              <div className="bg-card rounded-2xl p-6 border border-border">
+                <h2 className="text-2xl font-bold text-foreground mb-4">Localização</h2>
+                <div className="aspect-video bg-muted rounded-xl overflow-hidden">
+                  <iframe
+                    src={mapUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Contact Card */}
+          {/* Contato */}
           <div className="lg:col-span-1">
             <div className="bg-card rounded-2xl p-6 border border-border sticky top-24 space-y-6">
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Valor do Imóvel</p>
-                <p className="text-4xl font-bold text-primary">{property.price}</p>
+                <p className="text-4xl font-bold text-primary">{formattedPrice}</p>
               </div>
 
               <Button
@@ -242,17 +269,33 @@ const ImovelDetail = () => {
         </div>
       </section>
 
-      {/* Related Properties */}
-      <section className="py-12 bg-card border-y border-border">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-foreground mb-8">Imóveis Relacionados</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {relatedProperties.map((prop) => (
-              <PropertyCard key={prop.id} {...prop} />
-            ))}
+      {/* Relacionados */}
+      {relacionados.length > 0 && (
+        <section className="py-12 bg-card border-y border-border">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-foreground mb-8">Imóveis Relacionados</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {relacionados.map((prop) => (
+                <PropertyCard
+                  key={prop.id}
+                  id={String(prop.id)}
+                  image="/placeholder.jpg"
+                  title={prop.titulo}
+                  price={prop.valor?.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
+                  location={`${prop.bairro || ""}, ${prop.cidade || ""}`}
+                  bedrooms={prop.quartos || 0}
+                  bathrooms={prop.banheiros || 0}
+                  area={prop.metros || 0}
+                  type={prop.tipo || ""}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 };

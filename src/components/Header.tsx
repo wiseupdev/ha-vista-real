@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Building2, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
+import logo from "@/assets/logo.png";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
@@ -16,18 +18,36 @@ const Header = () => {
     { path: "/contato", label: "Contato" },
   ];
 
+  // Verifica se o usuário está logado
+  useEffect(() => {
+    const token = localStorage.getItem("ha_user");
+    setIsLoggedIn(!!token);
+  }, [location]); // atualiza quando muda de rota
+
+  const logout = () => {
+    localStorage.removeItem("ha_user");
+    setIsLoggedIn(false);
+    window.location.href = "/login"; // redireciona após logout
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="p-2 bg-primary rounded-lg group-hover:shadow-[var(--shadow-primary)] transition-shadow">
-              <Building2 className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img
+              src={logo}
+              alt="logo"
+              className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-foreground">H.A Imobiliária</span>
-              <span className="text-xs text-muted-foreground">Seu imóvel dos sonhos</span>
+              <span className="text-xl font-bold text-foreground">
+                H.A Imoveis Conceito
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Seu imóvel dos sonhos
+              </span>
             </div>
           </Link>
 
@@ -53,15 +73,33 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
-            <Button
-              asChild
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-[var(--shadow-primary)] transition-all hover:scale-105"
-            >
-              <Link to="/contato">Fale Conosco</Link>
-            </Button>
-          </div>
+          {/* Desktop Buttons */}
+          {!isLoggedIn ? (
+            <div className="hidden md:flex items-center gap-3">
+              <Button
+                asChild
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold rounded-xl transition-all"
+              >
+                <Link to="/cadastro">Cadastro</Link>
+              </Button>
+              <Button
+                asChild
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-[var(--shadow-primary)] transition-all hover:scale-105"
+              >
+                <Link to="/login">Login</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-3">
+              <Button
+                onClick={logout}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all"
+              >
+                Sair
+              </Button>
+            </div>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -90,14 +128,38 @@ const Header = () => {
                   {link.label}
                 </Link>
               ))}
-              <Button
-                asChild
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl mx-4"
-              >
-                <Link to="/contato" onClick={() => setIsMenuOpen(false)}>
-                  Fale Conosco
-                </Link>
-              </Button>
+
+              {/* Mobile Buttons */}
+              {!isLoggedIn ? (
+                <div className="flex flex-col gap-3 px-4 mt-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold rounded-xl w-full"
+                  >
+                    <Link to="/cadastro" onClick={() => setIsMenuOpen(false)}>
+                      Cadastro
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl w-full"
+                  >
+                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                      Login
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 px-4 mt-2">
+                  <Button
+                    onClick={logout}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl w-full"
+                  >
+                    Sair
+                  </Button>
+                </div>
+              )}
             </div>
           </nav>
         )}
