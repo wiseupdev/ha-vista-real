@@ -1,3 +1,4 @@
+"use client"
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import supabase from "@/utility/supabaseClient";
@@ -6,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
-const WEBHOOK_URL = "https://editor.wiseuptech.com.br/webhook-test/HAimboliariaIMAGEMANAGER";
+const WEBHOOK_URL = import.meta.env.NEXT_PUBLIC_WEBHOOK_URL;
 
 export default function ImovelDetalhes() {
   const { id } = useParams();
@@ -18,7 +19,7 @@ export default function ImovelDetalhes() {
   const [midias, setMidias] = useState<(string | File)[]>([]);
   const [showExcluirModal, setShowExcluirModal] = useState(false);
 
-  // Carrega o imóvel do Supabase (somente leitura)
+  // 🔹 Carrega o imóvel do Supabase
   async function carregarImovel() {
     const { data, error } = await supabase.from("HA_IMOVEIS").select("*").eq("id", id).single();
     if (!error && data) {
@@ -39,12 +40,19 @@ export default function ImovelDetalhes() {
             : "",
       });
 
-      // Campo `url` pode ser string ou array
-      const urls = Array.isArray(data.url)
-        ? data.url
-        : typeof data.url === "string"
-        ? data.url.split(",").map((u) => u.trim())
-        : [];
+      // 🔹 Lê o campo url (JSON)
+      let urls: string[] = [];
+      try {
+        if (typeof data.url === "object" && data.url !== null) {
+          urls = Object.values(data.url);
+        } else if (typeof data.url === "string") {
+          const parsed = JSON.parse(data.url);
+          urls = Object.values(parsed);
+        }
+      } catch {
+        urls = [];
+      }
+
       setMidias(urls);
     }
   }
@@ -53,13 +61,11 @@ export default function ImovelDetalhes() {
     carregarImovel();
   }, [id]);
 
-  // Alterar valores do formulário
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev: any) => ({ ...prev, [name]: value }));
   };
 
-  // Excluir imóvel (simples)
   const handleExcluir = async () => {
     const { error } = await supabase.from("HA_IMOVEIS").delete().eq("id", id);
     if (!error) {
@@ -69,27 +75,26 @@ export default function ImovelDetalhes() {
     }
   };
 
-  // Atualizar imóvel — envia tudo pro Webhook como FormData
+  // 🔹 Atualiza o imóvel via webhook (N8N)
   const handleAtualizar = async () => {
     const formData = new FormData();
-    formData.append("acao", "atualizar_imovel");
+    formData.append("funcao", "atualizar_imovel");
+    formData.append("atualiza_imoveis", "true"); // ✅ campo apenas para o N8N
 
-    // Adiciona os campos do form
     Object.entries(form).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         formData.append(key, String(value));
       }
     });
 
-    // Adiciona o ID do imóvel
     formData.append("id", String(id));
 
-    // Adiciona as mídias (fotos/vídeos)
+    // 🔹 Envia TODAS as mídias atuais (antigas + novas)
     midias.forEach((m) => {
       if (m instanceof File) {
-        formData.append("midia", m); // arquivo mesmo
+        formData.append("midia", m);
       } else {
-        formData.append("midia_url", m); // apenas URL
+        formData.append("midia_url", m);
       }
     });
 
@@ -111,14 +116,12 @@ export default function ImovelDetalhes() {
     }
   };
 
-  //Adicionar novas mídias (imagens/vídeos)
   const handleAddMidia = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     setMidias((prev) => [...prev, ...Array.from(files)]);
   };
 
-  // Remover mídia
   const handleRemoveMidia = (index: number) => {
     setMidias((prev) => prev.filter((_, i) => i !== index));
   };
@@ -136,6 +139,7 @@ export default function ImovelDetalhes() {
     "tipo",
     "negociacao",
     "nome_anunciante",
+    "Condominio",
   ];
 
   return (
@@ -174,10 +178,7 @@ export default function ImovelDetalhes() {
                     {imovel.caracteristicas
                       .split(",")
                       .map((item: string, i: number) => (
-                        <div
-                          key={i}
-                          className="bg-muted p-2 rounded-lg shadow-sm text-sm"
-                        >
+                        <div key={i} className="bg-muted p-2 rounded-lg shadow-sm text-sm">
                           {item.trim()}
                         </div>
                       ))}
@@ -209,9 +210,7 @@ export default function ImovelDetalhes() {
               ))}
 
               <div className="col-span-2">
-                <h3 className="font-semibold mb-2">
-                  Características (separe por vírgulas)
-                </h3>
+                <h3 className="font-semibold mb-2">Características (separe por vírgulas)</h3>
                 <Input
                   name="caracteristicas"
                   value={form.caracteristicas || ""}
@@ -232,7 +231,7 @@ export default function ImovelDetalhes() {
         <CardContent>
           {midias.length === 0 && <p className="text-gray-500">Nenhuma mídia cadastrada.</p>}
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
             {midias.map((m, index) => {
               const url = m instanceof File ? URL.createObjectURL(m) : m;
               return (

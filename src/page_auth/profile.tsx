@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from "react";
+import { useEffect, useState, ChangeEvent } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,19 +6,41 @@ import { Camera, User } from "lucide-react";
 import { useAuth } from "@/authProvider";
 import { enviarPerfilWebhook } from "@/components/ImageEvents";
 import { toast } from "sonner";
+import supabase from "@/utility/supabaseClient"; 
 
 const Profile = () => {
   const { user } = useAuth();
 
-  // Estados de perfil
   const [nome, setNome] = useState(user?.nome || "");
   const [email, setEmail] = useState(user?.email || "");
   const [telefone, setTelefone] = useState(user?.telefone || "");
   const [foto, setFoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fotoURL, setFotoURL] = useState<string | null>(null); // ✅ nova variável
 
-  // Pré-visualizar a foto de perfil
+  // 🔍 Busca a foto no Supabase
+  useEffect(() => {
+    const fetchFoto = async () => {
+      if (!user?.id) return;
+
+      const { data, error } = await supabase
+        .from("HA_user")
+        .select("url")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Erro ao buscar foto:", error);
+      } else if (data?.url) {
+        setFotoURL(data.url);
+      }
+    };
+
+    fetchFoto();
+  }, [user?.id]);
+
+  // 📸 Pré-visualizar nova foto
   const handleFotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -29,7 +51,7 @@ const Profile = () => {
     }
   };
 
-  // Enviar atualização de perfil para o webhook
+  // 💾 Enviar atualização de perfil
   const handleSalvar = async () => {
     try {
       setLoading(true);
@@ -39,7 +61,8 @@ const Profile = () => {
         email,
         telefone,
         foto,
-        acao: "perfil" as const,
+        funcao: "perfil" as const,
+        id: user?.id,
       };
 
       const response = await enviarPerfilWebhook(payload);
@@ -75,14 +98,12 @@ const Profile = () => {
           </CardHeader>
 
           <CardContent className="grid gap-6">
-            {/* Foto de perfil */}
+            {/* 🖼️ Foto de perfil */}
             <div className="flex flex-col items-center mb-6">
               <div className="relative">
                 <img
                   src={
-                    preview ||
-                    user?.foto ||
-                    "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    preview || fotoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png"
                   }
                   alt="Foto de perfil"
                   className="w-32 h-32 rounded-full border-4 border-primary object-cover"
@@ -103,7 +124,7 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Campos de texto */}
+            {/* 🧾 Campos de texto */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-muted-foreground">Nome</label>

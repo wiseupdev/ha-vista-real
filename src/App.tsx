@@ -13,16 +13,17 @@ import Contato from "./pages/Contato";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/login";
 import Cadastro from "./pages/cadastro";
-import Profile from "./page_auth/profile";
+import Profile from "./page_auth/Profile";
 import Dashboard from "./page_auth/Dashboard";
 import Favoritos from "./page_auth/Favoritos";
 import Ajuda from "./page_auth/Ajuda";
 import Financiamento from "./pages/credito";
-import AdminImoveis from "./page_auth/Cadastroimoveis";
+import CadastroImoveis from "./page_auth/Cadastroimoveis";
 import ImovelDetalhes from "./page_auth/imoveisdetalhes";
 import CadastroCorretores from "./page_auth/Corretor";
 import AnaliseImoveis from "./page_auth/AnaliseImoveis";
 import AnaliseImovelDetalhes from "./page_auth/AnaliseImovelDetalhes";
+import Privacidade from "./pages/Privacidade";
 import { useEffect, useState } from "react";
 import "./index.css";
 import { AuthProvider, useAuth } from "./authProvider";
@@ -45,15 +46,16 @@ const AppRoutes = () => {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/credito" element={<Financiamento />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/privacidade" element={<Privacidade />} />
 
         {/* 🔒 Rotas protegidas */}
         {user && (
           <>
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/Profile" element={<Profile />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/favoritos" element={<Favoritos />} />
             <Route path="/ajuda" element={<Ajuda />} />
-            <Route path="/cadastroimoveis" element={<AdminImoveis />} />
+            <Route path="/Cadastroimoveis" element={<CadastroImoveis />} />
             <Route path="/imoveisdetalhes/:id" element={<ImovelDetalhes />} />
             <Route path="/corretor" element={<CadastroCorretores />} />
             <Route path="/AnaliseImoveis" element={<AnaliseImoveis />} />

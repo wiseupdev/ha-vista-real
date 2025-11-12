@@ -17,13 +17,31 @@ import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import bgDark from "@/assets/hero-luxury-real-estate.jpg";
 import bgLight from "@/assets/hero-luxury-light.jpg";
 
+// Definindo uma interface para o Imóvel com a contagem de likes e URLs
+interface Imovel {
+  id: number;
+  titulo: string;
+  cidade?: string;
+  bairro?: string;
+  valor?: number;
+  tipo?: string;
+  quartos?: number;
+  banheiros?: number;
+  metros?: number;
+  status?: boolean;
+  url?: { [key: string]: string } | null; // Adiciona o campo URL (JSONB)
+  HA_favorito: { user_id: string }[] | null;
+  likes: number; // Adicionado após o processamento
+  image: string; // URL da primeira imagem para o Card
+}
+
 const Index = () => {
   // Detectar tema atual
   const [theme, setTheme] = useState(
     document.documentElement.classList.contains("light") ? "light" : "dark"
   );
 
-  const [imoveis, setImoveis] = useState([]);
+  const [imoveis, setImoveis] = useState<Imovel[]>([]); // Tipagem adicionada
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,10 +58,12 @@ const Index = () => {
     return () => observer.disconnect();
   }, []);
 
-  // 🔹 Buscar imóveis mais favoritados
+  // 🔹 Buscar imóveis mais favoritados (ALTERADO)
   useEffect(() => {
     const buscarImoveis = async () => {
       setLoading(true);
+      
+      // 1. Buscamos os imóveis, incluindo as URLs e a lista de favoritos
       const { data, error } = await supabase
         .from("HA_IMOVEIS")
         .select(`
@@ -57,10 +77,13 @@ const Index = () => {
           banheiros,
           metros,
           status,
+          url,
           HA_favorito (user_id)
         `)
         .eq("status", true)
-        .limit(10);
+        // Buscamos um número maior que 10 se houver, para depois ordenar e pegar os 10 mais curtidos.
+        // Se a ordem for crucial, o ideal seria uma View ou Função SQL no Supabase.
+        .limit(50); // Aumentamos o limite para ter mais amostra para ordenar.
 
       if (error) {
         console.error("Erro ao buscar imóveis:", error);
@@ -68,17 +91,38 @@ const Index = () => {
         return;
       }
 
-      const lista = data.map((i) => ({
-        ...i,
-        likes: i.HA_favorito ? i.HA_favorito.length : 0,
-      }));
+      // 2. Processar, calcular likes e adicionar a primeira URL da imagem
+      let listaProcessada: Imovel[] = data.map((i: any) => {
+        const likesCount = i.HA_favorito ? i.HA_favorito.length : 0;
+        
+        // Pega a primeira URL do objeto JSONB para usar como imagem de capa
+        let firstImageUrl = "/placeholder.jpg"; 
+        if (i.url && typeof i.url === 'object') {
+          const urlsArray = Object.values(i.url);
+          if (urlsArray.length > 0) {
+            firstImageUrl = urlsArray[0];
+          }
+        }
 
-      setImoveis(lista);
+        return {
+          ...i,
+          likes: likesCount,
+          image: firstImageUrl,
+        };
+      });
+
+      // 3. Ordenar a lista pelo número de likes (do maior para o menor)
+      listaProcessada.sort((a, b) => b.likes - a.likes);
+
+      // 4. Limitar aos 10 mais favoritados para o carrossel
+      const top10Imoveis = listaProcessada.slice(0, 10);
+
+      setImoveis(top10Imoveis);
       setLoading(false);
     };
 
     buscarImoveis();
-  }, []);
+  }, []); // Dependências vazias, roda apenas no mount
 
   const benefits = [
     {
@@ -162,9 +206,9 @@ const Index = () => {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 animate-fade-in">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Imóveis em Destaque</h2>
+            <h2 className="text-4xl font-bold text-foreground mb-4">Imóveis Mais Favoritados ⭐</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Seleção exclusiva dos nossos melhores imóveis disponíveis
+              Veja a seleção dos imóveis mais populares e desejados por nossos clientes
             </p>
           </div>
 
@@ -189,7 +233,19 @@ const Index = () => {
               {imoveis.map((imovel) => (
                 <SwiperSlide key={imovel.id}>
                   <div className="relative">
-                    <PropertyCard {...imovel} />
+                    {/* Aqui passamos a URL da primeira imagem, extraída na lógica acima */}
+                    <PropertyCard 
+                        id={String(imovel.id)}
+                        image={imovel.image}
+                        title={imovel.titulo}
+                        price={imovel.valor?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) || "Sob Consulta"}
+                        location={`${imovel.bairro || ""}, ${imovel.cidade || ""}`}
+                        bedrooms={imovel.quartos || 0}
+                        bathrooms={imovel.banheiros || 0}
+                        area={imovel.metros || 0}
+                        type={imovel.tipo || ""}
+                        
+                    />
                     {/* Ícone discreto de favoritos */}
                     <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
                       <Heart className="w-4 h-4 text-red-500 fill-red-500" />

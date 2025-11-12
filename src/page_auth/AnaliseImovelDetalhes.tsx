@@ -27,14 +27,37 @@ export default function AnaliseImovelDetalhes() {
       .eq("id", id)
       .single();
 
-    if (!error && data) {
-      setSolicitacao(data);
-      const urls = data.url
-        ? data.url.split(",").map((u: string) => u.trim())
-        : [];
-      setMidias(urls);
-    } else {
+    if (error) {
       console.error("Erro ao carregar solicitação:", error);
+      return;
+    }
+
+    if (data) {
+      setSolicitacao(data);
+
+      // ✅ Lê o campo JSONB `url` corretamente
+      let urls: string[] = [];
+      try {
+        if (data.url && typeof data.url === "object") {
+          // caso já venha como objeto JSON
+          urls = Object.values(data.url);
+        } else if (typeof data.url === "string") {
+          // caso venha como string JSON ou lista separada
+          const parsed = JSON.parse(data.url);
+          if (typeof parsed === "object") {
+            urls = Object.values(parsed);
+          } else if (Array.isArray(parsed)) {
+            urls = parsed;
+          } else {
+            urls = data.url.split(",").map((u: string) => u.trim());
+          }
+        }
+      } catch (err) {
+        console.warn("⚠️ Erro ao interpretar campo url:", err);
+        urls = [];
+      }
+
+      setMidias(urls);
     }
   }
 
@@ -83,7 +106,7 @@ export default function AnaliseImovelDetalhes() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Detalhes da Solicitação</h1>
 
-        {solicitacao.status === "em_analise" ? (
+        {solicitacao.status === "aguardando" ? (
           <Button onClick={() => setShowModal(true)}>Marcar como Enviado</Button>
         ) : (
           <Button disabled variant="secondary">

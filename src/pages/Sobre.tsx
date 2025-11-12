@@ -110,7 +110,7 @@ const Sobre = () => {
                 <SwiperSlide key={i}>
                   <div className="bg-background rounded-2xl shadow-md border border-border hover:border-primary transition-all p-6 text-center">
                     <img
-                      src={member.foto_url || "/placeholder.jpg"}
+                      src={member.url || "/placeholder.jpg"}
                       alt={member.nome}
                       className="w-32 h-32 mx-auto rounded-full object-cover mb-6 border-4 border-primary/20"
                     />

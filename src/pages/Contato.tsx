@@ -26,6 +26,7 @@ const Contato = () => {
     vaga: "",
     valor: "",
     agree: false,
+    funcao:  "anunciante"
   });
 
   const [previews, setPreviews] = useState<string[]>([]);
@@ -99,6 +100,7 @@ const Contato = () => {
           vaga: "",
           valor: "",
           agree: false,
+          funcao: "anunciante"
         });
         setPreviews([]);
       } else {

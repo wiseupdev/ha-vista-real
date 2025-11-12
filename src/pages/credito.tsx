@@ -1,7 +1,5 @@
 import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
-
-// 🔹 Importa corretamente as imagens
 import caixaLogo from "@/assets/caixaalfa.png";
 import brasilLogo from "@/assets/brasilalfa.png";
 import santanderLogo from "@/assets/santanderalfa.png";

@@ -1,5 +1,5 @@
 // src/events/ImageEvents.ts
-
+"use client";
 export interface ImovelData {
   name: string;
   email: string;
@@ -17,7 +17,7 @@ export interface ImovelData {
   vaga: string;
   valor: string;
   agree: boolean;
-  funcao: "anunciante";
+ 
 }
 
 // Interface para envio de perfil
@@ -33,8 +33,7 @@ export interface PerfilData {
 }
 
 //URL principal usada no painel da WiseUpTech
-const WEBHOOK_URL =
-  "https://editor.wiseuptech.com.br/webhook-test/HAimboliariaIMAGEMANAGER";
+const WEBHOOK_URL = import.meta.env.NEXT_PUBLIC_WEBHOOK_URL;
 
 /* ===========================
       IMÓVEIS

@@ -1,5 +1,6 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import supabase from "@/utility/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,6 +20,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import supabase from "@/utility/supabaseClient";
+
+
 
 export default function CadastroCorretores() {
   const [corretores, setCorretores] = useState<any[]>([]);
@@ -32,119 +36,146 @@ export default function CadastroCorretores() {
     numero: "",
     descricao: "",
     creci: "",
-    foto: "",
+    foto: null,
+    fotoNome: "",
+    preview: "",
   });
 
-  // 🔄 Carregar corretores
-  async function carregarCorretores() {
-    const { data, error } = await supabase.from("HA_corretor").select("*");
-    if (!error) setCorretores(data || []);
-    else console.error(error);
-  }
+  // 📦 Busca os corretores do Supabase
+  const carregarCorretores = async () => {
+    const { data, error } = await supabase
+      .from("HA_corretor")
+      .select("*")
+      ;
+
+    if (error) console.error("Erro ao buscar corretores:", error);
+    else setCorretores(data || []);
+  };
 
   useEffect(() => {
     carregarCorretores();
   }, []);
 
-  // ✅ Selecionar/desmarcar corretores
-  const handleSelect = (id: number) => {
-    setSelecionados((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
-  };
-
-  // 🗑️ Excluir corretores selecionados
-  const handleExcluirSelecionados = async () => {
-    if (selecionados.length === 0)
-      return alert("Selecione ao menos um corretor!");
-    if (!confirm("Deseja realmente excluir os corretores selecionados?")) return;
-
-    const { error } = await supabase
-      .from("HA_corretor")
-      .delete()
-      .in("id", selecionados);
-
-    if (!error) {
-      setSelecionados([]);
-      carregarCorretores();
-    } else {
-      console.error(error);
-    }
-  };
-
-  // ✏️ Abrir modal (para novo ou edição)
-  const handleAbrirModal = (corretor: any = null) => {
-    if (corretor) {
-      setEditando(corretor);
-      setForm(corretor);
-    } else {
-      setEditando(null);
-      setForm({ nome: "", email: "", numero: "", descricao: "", creci: "", foto: "" });
-    }
-    setShowModal(true);
-  };
-
-  // 📸 Upload da foto (somente local por enquanto)
+  // 📸 Captura imagem/vídeo
   const handleFotoChange = (e: any) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setForm({ ...form, foto: reader.result });
-      reader.readAsDataURL(file);
+      setForm({
+        ...form,
+        foto: file,
+        fotoNome: file.name,
+        preview: URL.createObjectURL(file),
+      });
     }
   };
 
-  // 💾 Salvar (inserir ou atualizar)
+  // 📤 Envia para o Webhook (dados + binário)
+  const enviarWebhook = async (dadosForm: any, file?: File) => {
+    try {
+      const webhookUrl =
+        process.env.NEXT_PUBLIC_WEBHOOK_URL as string;
+
+      const formData = new FormData();
+
+      // Adiciona todos os campos do formulário
+      for (const key in dadosForm) {
+        formData.append(key, dadosForm[key]);
+      }
+
+      // Adiciona o arquivo binário real
+      if (file) {
+        formData.append("file", file, file.name);
+      }
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        console.error("❌ Erro ao enviar webhook:", response.statusText);
+      } else {
+        console.log("✅ Webhook enviado com sucesso!");
+      }
+    } catch (err) {
+      console.error("❌ Erro no envio do webhook:", err);
+    }
+  };
+
+  // 💾 Salvar corretor
   const handleSalvar = async () => {
     if (!form.nome || !form.email) {
       alert("Preencha pelo menos o nome e o email!");
       return;
     }
 
-    if (editando) {
-      // Atualizar corretor existente
-      const { error } = await supabase
-        .from("HA_corretor")
-        .update({
-          nome: form.nome,
-          email: form.email,
-          numero: form.numero,
-          descricao: form.descricao,
-          creci: form.creci,
-        })
-        .eq("id", editando.id);
+    const payload = {
+      ...(editando ? { id: editando.id } : {}),
+      nome: form.nome,
+      email: form.email,
+      numero: form.numero,
+      descricao: form.descricao,
+      creci: form.creci,
+      fotoNome: form.foto?.name || "",
+      funcao: editando ? "atualizar_corretor" : "corretor",
+      data: new Date().toISOString(), // timestamp
+    };
 
-      if (!error) alert("Corretor atualizado com sucesso!");
-      else console.error(error);
-    } else {
-      // Criar novo corretor
-      const { error } = await supabase.from("HA_corretor").insert([
-        {
-          nome: form.nome,
-          email: form.email,
-          numero: form.numero,
-          descricao: form.descricao,
-          creci: form.creci,
-        },
-      ]);
+    await enviarWebhook(payload, form.foto);
 
-      if (!error) alert("Corretor cadastrado com sucesso!");
-      else console.error(error);
-    }
-
+    alert("✅ Corretor enviado para cadastro!");
     setShowModal(false);
     setEditando(null);
-    carregarCorretores();
+
+    // 🔄 Atualiza lista após o envio
+    setTimeout(() => carregarCorretores(), 2000);
   };
 
-  // 🔍 Filtrar corretores
   const corretoresFiltrados = corretores.filter((c) =>
     c.nome?.toLowerCase().includes(busca.toLowerCase())
   );
 
+  // 🧰 Modal de criação/edição
+  const handleAbrirModal = (corretor: any = null) => {
+    if (corretor) {
+      setEditando(corretor);
+      setForm(corretor);
+    } else {
+      setEditando(null);
+      setForm({
+        nome: "",
+        email: "",
+        numero: "",
+        descricao: "",
+        creci: "",
+        foto: null,
+        fotoNome: "",
+        preview: "",
+      });
+    }
+    setShowModal(true);
+  };
+
+  // 🗑️ Excluir (opcional via Supabase)
+  const handleExcluirSelecionados = async () => {
+    if (selecionados.length === 0) return;
+    const idsExcluir = selecionados.map((i) => corretores[i].id);
+
+    const { error } = await supabase
+      .from("HA_CORRETORES")
+      .delete()
+      .in("id", idsExcluir);
+
+    if (error) console.error("Erro ao excluir:", error);
+    else {
+      alert("Corretores excluídos com sucesso!");
+      carregarCorretores();
+    }
+    setSelecionados([]);
+  };
+
   return (
     <div className="p-6 space-y-6">
-      {/* Cabeçalho com busca e botões */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Cadastro de Corretores</h1>
         <div className="flex gap-2">
@@ -165,13 +196,12 @@ export default function CadastroCorretores() {
         </div>
       </div>
 
-      {/* 👔 Tabela de corretores */}
+      {/* 📋 Tabela de corretores */}
       <div className="rounded-md border border-border shadow-sm overflow-x-auto">
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead className="w-[50px] text-center">Sel.</TableHead>
-              <TableHead>ID</TableHead>
               <TableHead>Foto</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Email</TableHead>
@@ -183,31 +213,34 @@ export default function CadastroCorretores() {
 
           <TableBody>
             {corretoresFiltrados.length > 0 ? (
-              corretoresFiltrados.map((c) => (
-                <TableRow
-                  key={c.id}
-                  className={`hover:bg-muted/30 ${
-                    selecionados.includes(c.id) ? "bg-muted/50" : ""
-                  }`}
-                >
+              corretoresFiltrados.map((c, i) => (
+                <TableRow key={c.id}>
                   <TableCell className="text-center">
                     <input
                       type="checkbox"
-                      checked={selecionados.includes(c.id)}
-                      onChange={() => handleSelect(c.id)}
-                      className="accent-primary"
+                      checked={selecionados.includes(i)}
+                      onChange={() =>
+                        setSelecionados((prev) =>
+                          prev.includes(i)
+                            ? prev.filter((s) => s !== i)
+                            : [...prev, i]
+                        )
+                      }
                     />
                   </TableCell>
-                  <TableCell>{c.id}</TableCell>
                   <TableCell>
                     <img
-                      src={c.foto || "https://via.placeholder.com/40"}
+                      src={
+                        c.url ||
+                        c.preview ||
+                        "https://via.placeholder.com/40"
+                      }
                       alt="Foto"
                       className="rounded-full w-10 h-10 object-cover border"
                     />
                   </TableCell>
-                  <TableCell className="font-semibold">{c.nome}</TableCell>
-                  <TableCell>{c.email || "-"}</TableCell>
+                  <TableCell>{c.nome}</TableCell>
+                  <TableCell>{c.email}</TableCell>
                   <TableCell>{c.numero || "-"}</TableCell>
                   <TableCell>{c.creci || "-"}</TableCell>
                   <TableCell className="text-center">
@@ -224,7 +257,7 @@ export default function CadastroCorretores() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={7}
                   className="text-center text-muted-foreground py-6"
                 >
                   Nenhum corretor encontrado.
@@ -235,7 +268,7 @@ export default function CadastroCorretores() {
         </Table>
       </div>
 
-      {/* 🧾 Modal de Cadastro/Atualização */}
+      {/* 🪟 Modal de cadastro */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -247,16 +280,16 @@ export default function CadastroCorretores() {
           <div className="grid gap-3 py-4">
             <div className="flex flex-col items-center gap-3">
               <img
-                src={form.foto || "https://via.placeholder.com/100"}
+                src={form.preview || "https://via.placeholder.com/100"}
                 alt="Foto do corretor"
                 className="rounded-full w-24 h-24 object-cover border"
               />
               <label className="flex items-center gap-2 cursor-pointer text-sm text-blue-600">
                 <Upload className="w-4 h-4" />
-                <span>Selecionar foto</span>
+                <span>Selecionar foto ou vídeo</span>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   className="hidden"
                   onChange={handleFotoChange}
                 />

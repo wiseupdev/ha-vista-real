@@ -41,7 +41,7 @@ interface Property {
   banheiros?: number;
   metros?: number;
   vagas?: number;
-  url?: string;
+  url?: any; // Pode ser JSON ou string
 }
 
 const Imoveis = () => {
@@ -62,6 +62,7 @@ const Imoveis = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const navigate = useNavigate();
 
+  // 🔹 Verifica se há usuário logado
   useEffect(() => {
     const userData = localStorage.getItem("ha_user");
     if (userData) {
@@ -70,6 +71,7 @@ const Imoveis = () => {
     }
   }, []);
 
+  // 🔹 Busca imóveis
   useEffect(() => {
     const fetchImoveis = async () => {
       try {
@@ -88,6 +90,7 @@ const Imoveis = () => {
     fetchImoveis();
   }, []);
 
+  // 🔹 Busca favoritos
   useEffect(() => {
     const fetchFavoritos = async () => {
       if (!userId) return;
@@ -108,6 +111,7 @@ const Imoveis = () => {
     fetchFavoritos();
   }, [userId]);
 
+  // 🔹 Filtros
   const handleFilterChange = (key: string, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -152,6 +156,7 @@ const Imoveis = () => {
     setFilteredProperties(result);
   };
 
+  // 🔹 Favoritar / desfavoritar
   const toggleFavorito = async (imovelId: number) => {
     if (!userId) {
       setShowLoginModal(true);
@@ -203,7 +208,6 @@ const Imoveis = () => {
       <section className="w-full bg-background/70 backdrop-blur-md border-b border-border py-8">
         <div className="max-w-5xl mx-auto px-4">
           <div className="flex flex-col md:flex-row flex-wrap items-center gap-3 bg-card border border-border rounded-2xl shadow-sm p-4">
-            {/* Bairro */}
             <Input
               placeholder="Bairro ou região"
               value={filters.bairro.join(", ")}
@@ -216,7 +220,6 @@ const Imoveis = () => {
               className="h-10 text-sm rounded-xl border-border bg-muted/50 focus:ring-2 focus:ring-primary/40 w-[160px]"
             />
 
-            {/* Tipo */}
             <div className="w-[130px]">
               <Select onValueChange={(v) => handleFilterChange("tipo", v)}>
                 <SelectTrigger className="h-10 rounded-xl border-border bg-muted/50 text-sm">
@@ -230,7 +233,6 @@ const Imoveis = () => {
               </Select>
             </div>
 
-            {/* Preços */}
             <div className="flex items-center gap-2 w-[200px]">
               <Input
                 type="number"
@@ -248,7 +250,6 @@ const Imoveis = () => {
               />
             </div>
 
-            {/* Quartos e vagas */}
             <Input
               type="number"
               placeholder="Quartos"
@@ -283,40 +284,62 @@ const Imoveis = () => {
             </span>{" "}
             imóveis encontrados
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProperties.map((p) => (
-              <div key={p.id} className="relative">
-                <button
-                  onClick={() => toggleFavorito(Number(p.id))}
-                  className="absolute top-3 right-3 z-10 bg-white/70 hover:bg-white p-2 rounded-full shadow-md transition-all"
-                >
-                  <Heart
-                    className={`w-5 h-5 ${
-                      favoritos.includes(Number(p.id))
-                        ? "fill-red-500 text-red-500"
-                        : "text-gray-400"
-                    }`}
-                  />
-                </button>
 
-                <PropertyCard
-                  id={p.id}
-                  image={p.url || "/placeholder.jpg"}
-                  title={p.titulo}
-                  price={(p.valor || 0).toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
-                  location={`${p.bairro || ""}, ${p.cidade || ""}`}
-                  bedrooms={p.quartos || 0}
-                  bathrooms={p.banheiros || 0}
-                  area={p.metros || 0}
-                  type={p.tipo || "—"}
-                  vagas={p.vagas || 0}
-                  rating={4.5}
-                />
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProperties.map((p) => {
+              // ✅ Pega a primeira URL do campo JSON
+              let primeiraImagem = "/placeholder.jpg";
+              try {
+                if (typeof p.url === "string") {
+                  const jsonUrl = JSON.parse(p.url);
+                  const valores = Object.values(jsonUrl);
+                  if (valores.length > 0 && typeof valores[0] === "string") {
+                    primeiraImagem = valores[0];
+                  }
+                } else if (typeof p.url === "object" && p.url !== null) {
+                  const valores = Object.values(p.url);
+                  if (valores.length > 0 && typeof valores[0] === "string") {
+                    primeiraImagem = valores[0];
+                  }
+                }
+              } catch (err) {
+                console.warn("Erro ao ler JSON de url:", err);
+              }
+
+              return (
+                <div key={p.id} className="relative">
+                  <button
+                    onClick={() => toggleFavorito(Number(p.id))}
+                    className="absolute top-3 right-3 z-10 bg-white/70 hover:bg-white p-2 rounded-full shadow-md transition-all"
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${
+                        favoritos.includes(Number(p.id))
+                          ? "fill-red-500 text-red-500"
+                          : "text-gray-400"
+                      }`}
+                    />
+                  </button>
+
+                  <PropertyCard
+                    id={p.id}
+                    image={primeiraImagem} // 👈 apenas a primeira URL
+                    title={p.titulo}
+                    price={(p.valor || 0).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                    location={`${p.bairro || ""}, ${p.cidade || ""}`}
+                    bedrooms={p.quartos || 0}
+                    bathrooms={p.banheiros || 0}
+                    area={p.metros || 0}
+                    type={p.tipo || "—"}
+                    vagas={p.vagas || 0}
+                    rating={4.5}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -340,17 +363,14 @@ const Imoveis = () => {
             >
               Fazer Login
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowLoginModal(false)}
-            >
+            <Button variant="outline" onClick={() => setShowLoginModal(false)}>
               Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* CSS inline para remover setas dos inputs numéricos */}
+      {/* Remove setas dos inputs numéricos */}
       <style>
         {`
           input[type=number]::-webkit-inner-spin-button, 
