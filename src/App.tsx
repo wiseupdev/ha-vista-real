@@ -38,26 +38,26 @@ const AppRoutes = () => {
       <Routes>
         {/* 🌎 Rotas públicas */}
         <Route path="/" element={<Index />} />
-        <Route path="/imoveis" element={<Imoveis />} />
-        <Route path="/imoveis/:id" element={<ImovelDetail />} />
-        <Route path="/sobre" element={<Sobre />} />
-        <Route path="/contato" element={<Contato />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/credito" element={<Financiamento />} />
+        <Route path="/Imoveis" element={<Imoveis />} />
+        <Route path="/Imoveis/:id" element={<ImovelDetail />} />
+        <Route path="/Sobre" element={<Sobre />} />
+        <Route path="/Contato" element={<Contato />} />
+        <Route path="/Login" element={<Login />} />
+        <Route path="/Cadastro" element={<Cadastro />} />
+        <Route path="/Credito" element={<Financiamento />} />
         <Route path="*" element={<NotFound />} />
-        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/Privacidade" element={<Privacidade />} />
 
         {/* 🔒 Rotas protegidas */}
         {user && (
           <>
             <Route path="/Profile" element={<Profile />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/favoritos" element={<Favoritos />} />
-            <Route path="/ajuda" element={<Ajuda />} />
+            <Route path="/Dashboard" element={<Dashboard />} />
+            <Route path="/Favoritos" element={<Favoritos />} />
+            <Route path="/Ajuda" element={<Ajuda />} />
             <Route path="/Cadastroimoveis" element={<CadastroImoveis />} />
-            <Route path="/imoveisdetalhes/:id" element={<ImovelDetalhes />} />
-            <Route path="/corretor" element={<CadastroCorretores />} />
+            <Route path="/Imoveisdetalhes/:id" element={<ImovelDetalhes />} />
+            <Route path="/Corretor" element={<CadastroCorretores />} />
             <Route path="/AnaliseImoveis" element={<AnaliseImoveis />} />
             <Route path="//AnaliseImoveis/:id" element={<AnaliseImovelDetalhes />} />
 
