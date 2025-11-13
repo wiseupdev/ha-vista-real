@@ -90,7 +90,7 @@ const SidebarMenu = () => {
               </Link>
 
               <Link
-                to="/favoritos"
+                to="/Favoritos"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-3 hover:text-primary transition"
               >
@@ -99,7 +99,7 @@ const SidebarMenu = () => {
               </Link>
 
               <Link
-                to="/contato"
+                to="/Contato"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-3 hover:text-primary transition"
               >
@@ -108,7 +108,7 @@ const SidebarMenu = () => {
               </Link>
 
               <Link
-                to="/ajuda"
+                to="/Ajuda"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-3 hover:text-primary transition"
               >

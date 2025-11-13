@@ -285,7 +285,7 @@ export default function ModalCadastroImovel({
       )}
 
       {/* CSS inline para remover setas dos inputs numéricos */}
-      <style jsx>{`
+      <style>{`
         input[type="number"].no-spinner::-webkit-outer-spin-button,
         input[type="number"].no-spinner::-webkit-inner-spin-button {
           -webkit-appearance: none;

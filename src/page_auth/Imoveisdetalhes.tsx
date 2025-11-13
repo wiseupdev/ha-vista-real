@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
-const WEBHOOK_URL = import.meta.env.NEXT_PUBLIC_WEBHOOK_URL;
+const WEBHOOK_URL = import.meta.env.VITE_WEBHOOK_URL;
 
 export default function ImovelDetalhes() {
   const { id } = useParams();

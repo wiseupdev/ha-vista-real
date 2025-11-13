@@ -33,11 +33,9 @@ export interface PerfilData {
 }
 
 //URL principal usada no painel da WiseUpTech
-const WEBHOOK_URL = import.meta.env.NEXT_PUBLIC_WEBHOOK_URL;
+const WEBHOOK_URL = import.meta.env.VITE_WEBHOOK_URL;
+console.log("Webhook URL:", WEBHOOK_URL);
 
-/* ===========================
-      IMÓVEIS
-=========================== */
 
 //Função para ENVIAR (criar novo imóvel)
 export const createImovel = async (data: ImovelData): Promise<Response> => {

@@ -73,7 +73,7 @@ export default function CadastroCorretores() {
   const enviarWebhook = async (dadosForm: any, file?: File) => {
     try {
       const webhookUrl =
-        process.env.NEXT_PUBLIC_WEBHOOK_URL as string;
+        import.meta.env.VITE_WEBHOOK_URL;
 
       const formData = new FormData();
 

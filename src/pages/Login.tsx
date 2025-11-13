@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,12 +10,13 @@ import supabase from "@/utility/supabaseClient";
 import { useAuth } from "../authProvider";
 import logo from "@/assets/logo.png";
 import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { setUser } = useAuth();
+  const isMobile = useIsMobile();
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,13 +51,11 @@ export default function Login() {
         return;
       }
 
-      // Salvar no localStorage
       localStorage.setItem(
         "ha_user",
         JSON.stringify({ id: data.id, nome: data.name, tipo: data.tipo })
       );
 
-      // Atualizar contexto
       setUser(data);
 
       toast({
@@ -75,52 +76,44 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Login com Google realizado!",
-        description: "Redirecionando...",
-      });
-    } catch (err: any) {
-      toast({
-        title: "Erro ao autenticar com Google",
-        description: err.message,
-        variant: "destructive",
-      });
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-primary/5 px-4">
-      <Card className="w-full max-w-md shadow-lg border border-border rounded-2xl animate-fade-in">
-        <CardHeader className="text-center">
+    <div
+      className={`min-h-screen flex ${
+        isMobile ? "items-start pt-10" : "items-center"
+      } justify-center bg-gradient-to-br from-background to-primary/5 px-4`}
+    >
+      <Card
+        className={`w-full ${
+          isMobile ? "max-w-sm p-4 rounded-xl" : "max-w-md p-6 rounded-2xl"
+        } shadow-lg border border-border animate-fade-in`}
+      >
+        <CardHeader className={`text-center ${isMobile ? "space-y-2" : ""}`}>
           <img
             src={logo}
             alt="H.A Imobiliária"
-            className="w-16 h-16 mx-auto mb-3 rounded-xl object-contain"
+            className={`mx-auto mb-3 rounded-xl object-contain ${
+              isMobile ? "w-12 h-12" : "w-16 h-16"
+            }`}
           />
-          <CardTitle className="text-2xl font-bold text-foreground">
+          <CardTitle
+            className={`font-bold text-foreground ${
+              isMobile ? "text-xl" : "text-2xl"
+            }`}
+          >
             Bem-vindo(a) à{" "}
             <span className="text-primary">H.A Imobiliária</span>
           </CardTitle>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p
+            className={`text-muted-foreground ${
+              isMobile ? "text-xs" : "text-sm"
+            } mt-1`}
+          >
             Acesse sua conta para continuar
           </p>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className={`space-y-${isMobile ? "4" : "5"}`}>
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-1">
@@ -188,21 +181,12 @@ export default function Login() {
               <span className="h-[1px] w-16 bg-border"></span>
             </div>
 
-           {/*  Google Login
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              disabled={loading}
-              onClick={handleGoogleLogin}
-              className="w-full rounded-xl border flex items-center justify-center gap-2 hover:bg-muted transition-all hover:scale-[1.02]"
-            >
-              <FcGoogle className="w-5 h-5" />
-              Entrar com Google
-            </Button>*/}
-
             {/* Link para cadastro */}
-            <p className="text-center text-sm text-muted-foreground mt-4">
+            <p
+              className={`text-center text-muted-foreground mt-4 ${
+                isMobile ? "text-xs" : "text-sm"
+              }`}
+            >
               Não tem conta?{" "}
               <Link
                 to="/register"

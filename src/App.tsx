@@ -30,8 +30,22 @@ import { AuthProvider, useAuth } from "./authProvider";
 
 const queryClient = new QueryClient();
 
+// 🔹 Rotas da aplicação
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth(); // agora com loading
+  
+
+  // 🔸 Exibe tela de carregamento enquanto o authProvider carrega o usuário
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background text-foreground transition-opacity duration-500 ease-in-out">
+        <div className="text-center animate-fade-in">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-primary mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Layout>
@@ -45,8 +59,8 @@ const AppRoutes = () => {
         <Route path="/Login" element={<Login />} />
         <Route path="/Cadastro" element={<Cadastro />} />
         <Route path="/Credito" element={<Financiamento />} />
-        <Route path="*" element={<NotFound />} />
         <Route path="/Privacidade" element={<Privacidade />} />
+        <Route path="*" element={<NotFound />} />
 
         {/* 🔒 Rotas protegidas */}
         {user && (
@@ -59,8 +73,10 @@ const AppRoutes = () => {
             <Route path="/Imoveisdetalhes/:id" element={<ImovelDetalhes />} />
             <Route path="/Corretor" element={<CadastroCorretores />} />
             <Route path="/AnaliseImoveis" element={<AnaliseImoveis />} />
-            <Route path="//AnaliseImoveis/:id" element={<AnaliseImovelDetalhes />} />
-
+            <Route
+              path="/AnaliseImoveis/:id"
+              element={<AnaliseImovelDetalhes />}
+            />
           </>
         )}
       </Routes>
@@ -68,6 +84,7 @@ const AppRoutes = () => {
   );
 };
 
+// 🔹 App principal
 const App = () => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
 
@@ -87,7 +104,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            {/* ☀️🌙 Botão de alternar tema — visível apenas em telas médias ou maiores */}
+            {/* ☀️🌙 Botão de alternar tema */}
             <div
               className="hidden md:flex fixed top-6 right-6 z-[9999] items-center justify-center 
               rounded-full shadow-md backdrop-blur-md transition-all duration-300 hover:scale-105"
