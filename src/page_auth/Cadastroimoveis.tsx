@@ -15,7 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { PlusCircle, Trash2, Eye, XCircle } from "lucide-react";
 import ModalCadastroImovel from "@/components/ModalCadastroImovel";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function CadastroImoveis() {
   const [imoveis, setImoveis] = useState<any[]>([]);
