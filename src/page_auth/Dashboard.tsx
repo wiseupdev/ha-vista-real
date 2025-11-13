@@ -54,7 +54,6 @@ export default function Dashboard() {
 
   const carregarDados = async () => {
     try {
-      // === 1️⃣ Cards principais ===
       const { count: countClientes } = await supabase
         .from("HA_user")
         .select("*", { count: "exact", head: true })
@@ -67,14 +66,13 @@ export default function Dashboard() {
 
       const { data: contatos } = await supabase
         .from("HA_contatos")
-        .select("client_id");
+        .select("client_id, created_at");
 
       const uniqueClients = new Set(contatos?.map((c) => c.client_id));
       setTotalUsuarios(countClientes || 0);
       setTotalImoveis(countImoveis || 0);
       setTotalMensagens(uniqueClients.size);
 
-      // === 2️⃣ Gráfico de Usuários x Contatos ===
       const { data: usuarios } = await supabase
         .from("HA_user")
         .select("data")
@@ -108,7 +106,6 @@ export default function Dashboard() {
         }))
       );
 
-      // === 3️⃣ Corretores e contatos recebidos ===
       const { data: listaCorretores } = await supabase
         .from("HA_corretor")
         .select("id, nome");
@@ -133,7 +130,6 @@ export default function Dashboard() {
 
       setCorretores(dadosCorretores);
 
-      // === 4️⃣ Top 5 imóveis favoritos ===
       const { data: favs } = await supabase
         .from("HA_favorito")
         .select("imovel_id");
@@ -168,29 +164,39 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6">
-      <h1 className="text-3xl font-bold mb-6">📊 Painel do Administrador</h1>
+    <div className="min-h-screen bg-background text-foreground px-4 py-6 md:px-8">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center md:text-left">
+        📊 Painel do Administrador
+      </h1>
 
       {/* === CARDS === */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-card p-6 rounded-2xl shadow text-center">
-          <h2 className="text-xl font-semibold">👥 Usuários cadastrados</h2>
-          <p className="text-4xl font-bold mt-2 text-blue-500">{totalUsuarios}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+        <div className="bg-card p-5 rounded-2xl shadow text-center">
+          <h2 className="text-lg md:text-xl font-semibold">👥 Usuários</h2>
+          <p className="text-3xl md:text-4xl font-bold mt-2 text-blue-500">
+            {totalUsuarios}
+          </p>
         </div>
-        <div className="bg-card p-6 rounded-2xl shadow text-center">
-          <h2 className="text-xl font-semibold">🏠 Imóveis ativos</h2>
-          <p className="text-4xl font-bold mt-2 text-green-500">{totalImoveis}</p>
+        <div className="bg-card p-5 rounded-2xl shadow text-center">
+          <h2 className="text-lg md:text-xl font-semibold">🏠 Imóveis</h2>
+          <p className="text-3xl md:text-4xl font-bold mt-2 text-green-500">
+            {totalImoveis}
+          </p>
         </div>
-        <div className="bg-card p-6 rounded-2xl shadow text-center">
-          <h2 className="text-xl font-semibold">💬 Mensagens recebidas</h2>
-          <p className="text-4xl font-bold mt-2 text-amber-500">{totalMensagens}</p>
+        <div className="bg-card p-5 rounded-2xl shadow text-center">
+          <h2 className="text-lg md:text-xl font-semibold">💬 Mensagens</h2>
+          <p className="text-3xl md:text-4xl font-bold mt-2 text-amber-500">
+            {totalMensagens}
+          </p>
         </div>
       </div>
 
-      {/* === GRÁFICO PRINCIPAL === */}
-      <div className="bg-card p-6 rounded-2xl shadow mb-8">
-        <h2 className="text-2xl font-semibold mb-4">📈 Crescimento de Usuários e Contatos</h2>
-        <div className="w-full h-[400px]">
+      {/* === GRÁFICO 1 === */}
+      <div className="bg-card p-5 md:p-6 rounded-2xl shadow mb-8">
+        <h2 className="text-xl md:text-2xl font-semibold mb-4 text-center md:text-left">
+          📈 Crescimento de Usuários e Contatos
+        </h2>
+        <div className="w-full h-[250px] sm:h-[300px] md:h-[400px]">
           <ResponsiveContainer>
             <LineChart data={dadosGrafico}>
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
@@ -198,70 +204,123 @@ export default function Dashboard() {
               <YAxis stroke="#aaa" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "rgba(30, 41, 59, 0.9)", // fundo escuro semi-transparente
-                  border: "1px solid rgba(148, 163, 184, 0.3)", // borda sutil
+                  backgroundColor: "rgba(30,41,59,0.9)",
                   borderRadius: "10px",
-                  color: "#f1f5f9", // texto branco
-                  backdropFilter: "blur(6px)",
+                  border: "1px solid rgba(148,163,184,0.3)",
+                  color: "#f1f5f9",
                 }}
-                itemStyle={{ color: "#f1f5f9" }} // texto dos itens (valores)
-                labelStyle={{ color: "#93c5fd", fontWeight: "600" }} // cor do label (mês)
-                cursor={{ stroke: "#3b82f6", strokeWidth: 1 }} // linha guia ao passar o mouse
+                itemStyle={{ color: "#f1f5f9" }}
+                labelStyle={{ color: "#93c5fd", fontWeight: 600 }}
               />
               <Legend />
-              <Line type="monotone" dataKey="usuarios" stroke="#3b82f6" strokeWidth={3} name="Usuários" />
-              <Line type="monotone" dataKey="contatos" stroke="#10b981" strokeWidth={3} name="Contatos" />
+              <Line
+                type="monotone"
+                dataKey="usuarios"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                name="Usuários"
+              />
+              <Line
+                type="monotone"
+                dataKey="contatos"
+                stroke="#10b981"
+                strokeWidth={3}
+                name="Contatos"
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* === GRÁFICO CORRETORES === */}
-      <div className="bg-card p-6 rounded-2xl shadow mb-8">
-        <h2 className="text-2xl font-semibold mb-4">🤝 Contatos por Corretor</h2>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={corretores}>
-            <defs>
-              <linearGradient id="gradCorretor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9}/>
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.4}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="nome" />
-            <YAxis />
-            <Tooltip cursor={{ fill: "rgba(99,102,241,0.1)" }} />
-            <Bar dataKey="contatos" fill="url(#gradCorretor)" radius={[10, 10, 0, 0]}>
-              {corretores.map((_, i) => (
-                <Cell key={i} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      {/* === GRÁFICO 2 === */}
+      <div className="bg-card p-5 md:p-6 rounded-2xl shadow mb-8">
+        <h2 className="text-xl md:text-2xl font-semibold mb-4 text-center md:text-left">
+          🤝 Contatos por Corretor
+        </h2>
+        <div className="w-full h-[250px] sm:h-[300px] md:h-[350px] overflow-x-auto">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={corretores}
+              margin={{ top: 5, right: 10, left: 0, bottom: 50 }}
+            >
+              <defs>
+                <linearGradient id="gradCorretor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0.4} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="nome"
+                tickFormatter={(v) =>
+                  v.length > 10 ? v.slice(0, 10) + "..." : v
+                }
+                angle={-30}
+                textAnchor="end"
+                interval={0}
+              />
+              <YAxis />
+              <Tooltip cursor={{ fill: "rgba(99,102,241,0.1)" }} />
+              <Bar
+                dataKey="contatos"
+                fill="url(#gradCorretor)"
+                radius={[10, 10, 0, 0]}
+              >
+                {corretores.map((_, i) => (
+                  <Cell key={i} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      {/* === GRÁFICO TOP IMÓVEIS === */}
-      <div className="bg-card p-6 rounded-2xl shadow">
-        <h2 className="text-2xl font-semibold mb-4">⭐ Top 5 Imóveis Favoritados</h2>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={topImoveis}>
-            <defs>
-              <linearGradient id="gradImovel" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.9}/>
-                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.4}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="titulo" tickFormatter={(v) => v.slice(0, 12) + (v.length > 12 ? "..." : "")} />
-            <YAxis />
-            <Tooltip formatter={(value: any, name: any, props: any) => [`${value} favoritos`, `Imóvel ID: ${props.payload.id}`]} />
-            <Bar dataKey="favoritos" fill="url(#gradImovel)" radius={[10, 10, 0, 0]}>
-              {topImoveis.map((_, i) => (
-                <Cell key={i} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      {/* === GRÁFICO 3 === */}
+      <div className="bg-card p-5 md:p-6 rounded-2xl shadow">
+        <h2 className="text-xl md:text-2xl font-semibold mb-4 text-center md:text-left">
+          ⭐ Top 5 Imóveis Favoritados
+        </h2>
+        <div className="w-full h-[250px] sm:h-[300px] md:h-[350px] overflow-x-auto">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={topImoveis}
+              margin={{ top: 5, right: 10, left: 0, bottom: 50 }}
+            >
+              <defs>
+                <linearGradient id="gradImovel" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.9} />
+                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.4} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="titulo"
+                tickFormatter={(v) =>
+                  v.length > 12 ? v.slice(0, 12) + "..." : v
+                }
+                angle={-30}
+                textAnchor="end"
+                interval={0}
+              />
+              <YAxis />
+              <Tooltip
+                formatter={(value: any, name: any, props: any) => [
+                  `${value} favoritos`,
+                  `Imóvel ID: ${props.payload.id}`,
+                ]}
+              />
+              <Bar
+                dataKey="favoritos"
+                fill="url(#gradImovel)"
+                radius={[10, 10, 0, 0]}
+              >
+                {topImoveis.map((_, i) => (
+                  <Cell key={i} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
